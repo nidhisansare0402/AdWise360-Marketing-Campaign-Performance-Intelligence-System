@@ -1,0 +1,11 @@
+campaign_id,campaign_name,platform_id,objective,start_date,end_date,region,budget
+101,Campaign_101,2,Awareness,2025-09-07,2025-09-18,UK,19414.00
+102,Campaign_102,3,Engagement,2025-09-06,2025-09-25,India,13197.00
+103,Campaign_103,1,Awareness,2025-09-05,2025-09-17,UK,18745.00
+104,Campaign_104,1,Awareness,2025-09-01,2025-09-17,USA,16272.00
+105,Campaign_105,1,Engagement,2025-09-03,2025-09-17,India,11152.00
+106,Campaign_106,2,Awareness,2025-09-10,2025-09-22,India,19058.00
+107,Campaign_107,3,Sales,2025-09-08,2025-10-01,UK,12025.00
+108,Campaign_108,3,Awareness,2025-09-10,2025-09-30,India,9805.00
+109,Campaign_109,2,Engagement,2025-09-10,2025-09-25,USA,19248.00
+110,Campaign_110,3,Engagement,2025-09-04,2025-09-29,India,15305.00
