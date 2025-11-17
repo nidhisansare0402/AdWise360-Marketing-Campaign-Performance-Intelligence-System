@@ -41,3 +41,13 @@ st.line_chart(roi_trend)
 st.subheader("Impressions vs Clicks")
 imp_clicks = filtered.groupby("date")[["impressions", "clicks"]].sum()
 st.area_chart(imp_clicks)
+
+import altair as alt
+
+st.subheader("CTR vs ROI Scatter Plot")
+scatter = alt.Chart(filtered).mark_circle(size=60).encode(
+    x='CTR',
+    y='ROI',
+    tooltip=['campaign_name', 'CTR', 'ROI']
+)
+st.altair_chart(scatter, use_container_width=True)
