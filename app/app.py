@@ -1,32 +1,35 @@
 import streamlit as st
 from data_loader import load_joined_data
 
-st.set_page_config(
-    page_title="AdWise360 Dashboard", 
-    layout="wide"
-)
+st.set_page_config(page_title="AdWise360 Dashboard", layout="wide")
 
-# Load data
+st.title("AdWise360 – Marketing Campaign Insights")
+
 df = load_joined_data()
 
-st.title("AdWise360 – Marketing Campaign Performance Dashboard")
-
+# --- FILTERS ---
 st.sidebar.header("Filters")
+platform = st.sidebar.selectbox("Platform", df['platform_id'].unique())
+region = st.sidebar.selectbox("Region", df['region'].unique())
+objective = st.sidebar.selectbox("Objective", df['objective'].unique())
 
-platforms = df['platform_id'].unique()
-regions = df['region'].unique()
-objectives = df['objective'].unique()
-
-selected_platform = st.sidebar.selectbox("Select Platform", platforms)
-selected_region = st.sidebar.selectbox("Select Region", regions)
-selected_objective = st.sidebar.selectbox("Select Objective", objectives)
-
-# Filter data
-filtered_df = df[
-    (df['platform_id'] == selected_platform) &
-    (df['region'] == selected_region) &
-    (df['objective'] == selected_objective)
+filtered = df[
+    (df['platform_id'] == platform) &
+    (df['region'] == region) &
+    (df['objective'] == objective)
 ]
 
-st.write("### Filtered Campaign Data")
-st.dataframe(filtered_df)
+# --- KPIs ---
+total_impressions = int(filtered['impressions'].sum())
+total_clicks = int(filtered['clicks'].sum())
+avg_ctr = round(filtered['CTR'].mean(), 2)
+avg_cpc = round(filtered['CPC'].mean(), 2)
+avg_roi = round(filtered['ROI'].mean(), 2)
+
+col1, col2, col3, col4, col5 = st.columns(5)
+
+col1.metric("Total Impressions", f"{total_impressions:,}")
+col2.metric("Total Clicks", f"{total_clicks:,}")
+col3.metric("Avg CTR (%)", avg_ctr)
+col4.metric("Avg CPC (₹)", avg_cpc)
+col5.metric("Avg ROI (%)", avg_roi)
