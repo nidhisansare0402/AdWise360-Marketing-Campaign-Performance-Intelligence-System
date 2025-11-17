@@ -33,3 +33,7 @@ col2.metric("Total Clicks", f"{total_clicks:,}")
 col3.metric("Avg CTR (%)", avg_ctr)
 col4.metric("Avg CPC (₹)", avg_cpc)
 col5.metric("Avg ROI (%)", avg_roi)
+
+st.subheader("ROI Trend Over Time")
+roi_trend = filtered.groupby("date")["ROI"].mean()
+st.line_chart(roi_trend)
