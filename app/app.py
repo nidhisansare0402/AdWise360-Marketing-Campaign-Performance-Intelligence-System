@@ -51,3 +51,17 @@ scatter = alt.Chart(filtered).mark_circle(size=60).encode(
     tooltip=['campaign_name', 'CTR', 'ROI']
 )
 st.altair_chart(scatter, use_container_width=True)
+
+tab1, tab2, tab3 = st.tabs(["Overview", "Charts", "Raw Data"])
+
+with tab1:
+    st.write("### KPI Summary")
+    
+
+with tab2:
+    st.write("### Visual Charts")
+    
+
+with tab3:
+    st.write("### Dataset")
+    st.dataframe(filtered)
