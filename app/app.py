@@ -1,12 +1,13 @@
 import streamlit as st
-from data_loader import load_joined_data
-
+from etl import get_cached_data, refresh_data
+from data_loader import create_campaign_features, save_ml_features_csv
+import io
 
 st.set_page_config(page_title="AdWise360 Dashboard", layout="wide")
 
 st.title("AdWise360 – Marketing Campaign Insights")
 
-df = load_joined_data()
+df = get_cached_data()
 
 # --- FILTERS ---
 st.sidebar.header("Filters")
@@ -66,3 +67,15 @@ with tab2:
 with tab3:
     st.write("### Dataset")
     st.dataframe(filtered)
+
+st.sidebar.button("Refresh Data", on_click=refresh_data)
+
+# ML export button
+if st.sidebar.button("Export ML Features (CSV)"):
+    features = create_campaign_features(df)
+    save_ml_features_csv(features)
+    st.success("Saved features to database/ml_campaign_features.csv")
+
+# Download filtered CSV
+csv = filtered.to_csv(index=False).encode('utf-8')
+st.download_button("Download filtered data (CSV)", data=csv, file_name="adwise_filtered.csv", mime="text/csv")
