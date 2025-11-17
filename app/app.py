@@ -37,3 +37,7 @@ col5.metric("Avg ROI (%)", avg_roi)
 st.subheader("ROI Trend Over Time")
 roi_trend = filtered.groupby("date")["ROI"].mean()
 st.line_chart(roi_trend)
+
+st.subheader("Impressions vs Clicks")
+imp_clicks = filtered.groupby("date")[["impressions", "clicks"]].sum()
+st.area_chart(imp_clicks)
