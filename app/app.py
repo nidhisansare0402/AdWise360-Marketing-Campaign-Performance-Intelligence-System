@@ -1,6 +1,7 @@
 import streamlit as st
 from data_loader import load_joined_data
 
+
 st.set_page_config(page_title="AdWise360 Dashboard", layout="wide")
 
 st.title("AdWise360 – Marketing Campaign Insights")

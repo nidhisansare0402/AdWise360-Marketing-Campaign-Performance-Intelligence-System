@@ -1,44 +1,55 @@
+# app/data_loader.py
 import pandas as pd
+from sqlalchemy import text
 from db_connection import get_db_connection
 
-def load_campaign_data():
+def extract_campaigns():
     engine = get_db_connection()
-    query = "SELECT * FROM campaigns;"
-    df = pd.read_sql(query, engine)
+    q = "SELECT * FROM campaigns;"
+    return pd.read_sql(q, engine)
+
+def extract_metrics():
+    engine = get_db_connection()
+    q = "SELECT * FROM metrics;"
+    return pd.read_sql(q, engine)
+
+def transform_joined(campaigns_df, metrics_df):
+    # join
+    df = metrics_df.merge(campaigns_df, on="campaign_id", how="left")
+    # safe calculations
+    df['CTR'] = (df['clicks'] / df['impressions']).fillna(0) * 100
+    df['CPC'] = (df['spend'] / df['clicks']).replace([float('inf'), -float('inf')], 0).fillna(0)
+    df['CPA'] = (df['spend'] / df['conversions']).replace([float('inf'), -float('inf')], 0).fillna(0)
+    df['ROI'] = ((df['revenue'] - df['spend']) / df['spend']).replace([float('inf'), -float('inf')], 0).fillna(0) * 100
+    # parse date
+    df['date'] = pd.to_datetime(df['date'])
     return df
 
-def load_metrics_data():
-    engine = get_db_connection()
-    query = "SELECT * FROM metrics;"
-    df = pd.read_sql(query, engine)
-    return df
+def load_to_df():
+    campaigns = extract_campaigns()
+    metrics = extract_metrics()
+    return transform_joined(campaigns, metrics)
 
-def load_joined_data():
-    engine = get_db_connection()
+def create_campaign_features(df):
+    # group by campaign
+    agg = df.groupby(['campaign_id','campaign_name','platform_id','objective','region']).agg(
+        total_impressions=('impressions','sum'),
+        total_clicks=('clicks','sum'),
+        total_conversions=('conversions','sum'),
+        total_spend=('spend','sum'),
+        total_revenue=('revenue','sum'),
+        avg_ctr=('CTR','mean'),
+        avg_cpc=('CPC','mean'),
+        avg_roi=('ROI','mean'),
+        days_active=('date','nunique')
+    ).reset_index()
 
-    query = """
-    SELECT 
-        c.campaign_id,
-        c.campaign_name,
-        c.platform_id,
-        c.region,
-        c.objective,
-        m.date,
-        m.impressions,
-        m.clicks,
-        m.conversions,
-        m.spend,
-        m.revenue
-    FROM campaigns c
-    JOIN metrics m ON c.campaign_id = m.campaign_id;
-    """
+    # Derived features
+    agg['conv_rate'] = agg['total_conversions'] / agg['total_clicks'].replace(0,1)
+    agg['profit'] = agg['total_revenue'] - agg['total_spend']
+    # Fill & types
+    agg = agg.fillna(0)
+    return agg
 
-    df = pd.read_sql(query, engine)
-
-    # Compute KPIs
-    df['CTR'] = round(df['clicks'] / df['impressions'] * 100, 2)
-    df['CPC'] = round(df['spend'] / df['clicks'], 2)
-    df['CPA'] = round(df['spend'] / df['conversions'], 2)
-    df['ROI'] = round((df['revenue'] - df['spend']) / df['spend'] * 100, 2)
-
-    return df
+def save_ml_features_csv(agg_df, path='database/ml_campaign_features.csv'):
+    agg_df.to_csv(path, index=False)
