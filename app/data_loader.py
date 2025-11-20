@@ -53,3 +53,9 @@ def create_campaign_features(df):
 
 def save_ml_features_csv(agg_df, path='database/ml_campaign_features.csv'):
     agg_df.to_csv(path, index=False)
+
+#Fetch platforms table
+def extract_platforms():
+    engine = get_db_connection()
+    q = "SELECT platform_id, name FROM platforms;"
+    return pd.read_sql(q, engine)
