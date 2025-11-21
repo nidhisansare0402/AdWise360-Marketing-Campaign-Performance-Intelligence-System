@@ -145,26 +145,21 @@ with tab_raw:
     st.dataframe(display)
 
 with tab_preds:
-    st.write("### Predictions (if available)")
+    st.write("### Predicted Campaign ROI")
+
     try:
-        preds = extract_predictions()
-        if preds.empty:
-            st.info("No predictions found. Export ML features and run training to populate predictions table.")
-            # small example placeholder
-            example = {
-                "campaign_id":[101,102],
-                "campaign_name":["Campaign_101","Campaign_102"],
-                "predicted_roi":[120.5, 88.3],
-                "ci_lower":[95.2,60.1],
-                "ci_upper":[145.8,116.5]
-            }
-            st.dataframe(example)
-        else:
-            st.dataframe(preds)
-            # allow download
-            st.download_button("Download predictions CSV", preds.to_csv(index=False).encode('utf-8'), "predictions.csv", "text/csv")
-    except Exception as e:
-        st.info("Predictions unavailable: " + str(e))
+        preds = pd.read_csv("database/predictions_output.csv")
+        st.dataframe(preds)
+
+        st.download_button(
+            label="Download Predicted ROI (CSV)",
+            data=preds.to_csv(index=False).encode('utf-8'),
+            file_name="predicted_roi.csv",
+            mime="text/csv"
+        )
+        
+    except:
+        st.info("No predictions available yet. Run your ML script to generate predictions.")
 
 
 # 7. Download the filtered data
