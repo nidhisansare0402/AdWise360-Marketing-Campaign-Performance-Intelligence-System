@@ -1,5 +1,5 @@
 import streamlit as st
-from data_loader import load_to_df
+from app.data_loader import load_to_df
 from datetime import datetime, timezone, timedelta
 
 """If you call this function again within 5 minutes (300 seconds) 

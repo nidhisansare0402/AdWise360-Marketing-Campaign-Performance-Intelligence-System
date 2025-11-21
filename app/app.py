@@ -1,7 +1,7 @@
 import streamlit as st
 import altair as alt
-from etl import get_cached_data, refresh_data
-from data_loader import (
+from app.etl import get_cached_data, refresh_data
+from app.data_loader import (
     create_campaign_features,
     extract_platforms,
     extract_predictions

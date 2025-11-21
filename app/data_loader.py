@@ -1,6 +1,6 @@
 import pandas as pd
 from sqlalchemy import text
-from db_connection import get_db_connection
+from app.db_connection import get_db_connection
 
 def extract_campaigns():
     engine = get_db_connection()

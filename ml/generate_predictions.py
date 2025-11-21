@@ -1,7 +1,7 @@
 import pandas as pd
 import joblib
-from data_loader import create_campaign_features
-from db_connection import get_db_connection
+from app.data_loader import create_campaign_features
+from app.db_connection import get_db_connection   # if you need DB engine
 from sqlalchemy import text
 
 # 1. Load full dataset (not filtered)

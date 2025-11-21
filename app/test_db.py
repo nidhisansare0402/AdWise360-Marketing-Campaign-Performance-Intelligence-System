@@ -1,4 +1,4 @@
-from db_connection import get_db_connection
+from app.db_connection import get_db_connection
 from sqlalchemy import text
 
 def test_conn():
