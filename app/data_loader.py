@@ -47,6 +47,10 @@ def load_to_df():
 
 # Small helper to aggregate campaign-level features for ML # it becomes input for ML models
 def create_campaign_features(df):
+    if 'campaign_id' not in df.columns:
+        raise ValueError("create_campaign_features expects 'campaign_id' column. Found: " + ", ".join(df.columns))
+
+
     # Group by campaign and produce aggregated features for modeling
     agg = df.groupby(['campaign_id','campaign_name','platform_id','objective','region']).agg(
         total_impressions=('impressions','sum'),

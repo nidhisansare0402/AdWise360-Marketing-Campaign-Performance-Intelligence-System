@@ -1,35 +1,52 @@
-import pandas as pd
+import os
 import joblib
-from app.data_loader import create_campaign_features
-from app.db_connection import get_db_connection   # if you need DB engine
-from sqlalchemy import text
+import pandas as pd
+from app.data_loader import load_to_df, create_campaign_features
+# we use load_to_df so KPIs (CTR, ROI, ...) are already computed
 
-# 1. Load full dataset (not filtered)
-engine = get_db_connection()
-df = pd.read_sql(text("SELECT * FROM metrics m JOIN campaigns c ON m.campaign_id=c.campaign_id;"), engine)
+def main():
+    # 1. Load the fully transformed DataFrame (extract+transform)
+    df = load_to_df()
+    print("Loaded transformed df rows:", len(df))
+    print("Columns available:", list(df.columns))
 
-# 2. Recreate ML features
-features_df = create_campaign_features(df)
+    # 2. Build campaign-level features (same logic as training)
+    features_df = create_campaign_features(df)
 
-# 3. Load model
-model = joblib.load("ml_models/roi_model.pkl")
+    # 3. Load model
+    model_path = os.path.join("ml_models", "roi_model.pkl")
+    if not os.path.exists(model_path):
+        raise FileNotFoundError(f"Model not found at {model_path}. Train model first (ml/train_model.py).")
 
-# 4. Predict ROI
-model_input = features_df[[
-    "total_impressions",
-    "total_clicks",
-    "total_conversions",
-    "total_spend",
-    "total_revenue",
-    "avg_ctr",
-    "days_active",
-    "conv_rate",
-    "profit"
-]]
+    model = joblib.load(model_path)
 
-features_df["predicted_roi"] = model.predict(model_input)
+    # 4. Prepare model input (must match training features)
+    feature_cols = [
+        "total_impressions",
+        "total_clicks",
+        "total_conversions",
+        "total_spend",
+        "total_revenue",
+        "avg_ctr",
+        "days_active",
+        "conv_rate",
+        "profit"
+    ]
+    # defensive: ensure columns exist
+    missing = [c for c in feature_cols if c not in features_df.columns]
+    if missing:
+        raise RuntimeError("Missing feature columns before prediction: " + ", ".join(missing))
 
-# 5. Save predictions to CSV
-features_df.to_csv("database/predictions_output.csv", index=False)
+    X = features_df[feature_cols]
 
-print("Predictions saved to database/predictions_output.csv")
+    # 5. Predict ROI
+    features_df["predicted_roi"] = model.predict(X)
+
+    # 6. Save predictions
+    os.makedirs("database", exist_ok=True)
+    out_path = os.path.join("database", "predictions_output.csv")
+    features_df.to_csv(out_path, index=False)
+    print("Predictions saved to", out_path)
+
+if __name__ == "__main__":
+    main()
