@@ -2,51 +2,43 @@ import os
 import joblib
 import pandas as pd
 from app.data_loader import load_to_df, create_campaign_features
-# we use load_to_df so KPIs (CTR, ROI, ...) are already computed
 
 def main():
-    # 1. Load the fully transformed DataFrame (extract+transform)
+    # 1. Load transformed row-level df (with CTR/ROI etc)
     df = load_to_df()
-    print("Loaded transformed df rows:", len(df))
-    print("Columns available:", list(df.columns))
 
-    # 2. Build campaign-level features (same logic as training)
+    # 2. Build features (ensures engineered features are created)
     features_df = create_campaign_features(df)
 
-    # 3. Load model
-    model_path = os.path.join("ml_models", "roi_model.pkl")
+    # 3. Load best model
+    model_path = os.path.join("ml_models", "best_model.pkl")
     if not os.path.exists(model_path):
-        raise FileNotFoundError(f"Model not found at {model_path}. Train model first (ml/train_model.py).")
-
+        raise FileNotFoundError(f"Model not found at {model_path}. Run ml/train_model.py first.")
     model = joblib.load(model_path)
 
-    # 4. Prepare model input (must match training features)
-    feature_cols = [
-        "total_impressions",
-        "total_clicks",
-        "total_conversions",
-        "total_spend",
-        "total_revenue",
-        "avg_ctr",
-        "days_active",
-        "conv_rate",
-        "profit"
+    # 4. Prepare model input columns (match train_model)
+    # Create the same list you used when training
+    model_cols = [
+        "total_impressions","total_clicks","total_conversions",
+        "total_spend","total_revenue","avg_ctr","days_active",
+        "conv_rate","profit",
+        "clicks_per_rupee","revenue_per_click","conversions_per_click",
+        "budget_utilization","log_revenue","log_spend","log_profit"
     ]
-    # defensive: ensure columns exist
-    missing = [c for c in feature_cols if c not in features_df.columns]
-    if missing:
-        raise RuntimeError("Missing feature columns before prediction: " + ", ".join(missing))
+    # include platform/objective dummies automatically
+    for c in features_df.columns:
+        if c.startswith("platform_") or c.startswith("obj_"):
+            model_cols.append(c)
 
-    X = features_df[feature_cols]
+    model_cols = [c for c in model_cols if c in features_df.columns]
+    X = features_df[model_cols]
 
-    # 5. Predict ROI
-    features_df["predicted_roi"] = model.predict(X)
+    features_df['predicted_roi'] = model.predict(X)
 
-    # 6. Save predictions
     os.makedirs("database", exist_ok=True)
     out_path = os.path.join("database", "predictions_output.csv")
     features_df.to_csv(out_path, index=False)
-    print("Predictions saved to", out_path)
+    print("Saved predictions to", out_path)
 
 if __name__ == "__main__":
     main()

@@ -13,5 +13,5 @@ print("Mean % Error:", df['pct_error'].mean())
 print("Median % Error:", df['pct_error'].median())
 
 print("\n===== WORST 10 CAMPAIGNS =====")
-worst = df.sort_values('abs_error', ascending=False).head(10)
+worst = df.sort_values('abs_error', ascending=False).head(5)
 print(worst[['campaign_id', 'campaign_name', 'avg_roi', 'predicted_roi', 'abs_error', 'pct_error']].to_string(index=False))
