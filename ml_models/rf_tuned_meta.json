@@ -1,0 +1,33 @@
+{
+  "model_name": "random_forest",
+  "model_file": "rf_tuned.pkl",
+  "feature_list": [
+    "total_impressions",
+    "total_clicks",
+    "total_conversions",
+    "total_spend",
+    "total_revenue",
+    "avg_ctr",
+    "days_active",
+    "budget",
+    "clicks_per_rupee",
+    "revenue_per_click",
+    "conversions_per_click",
+    "budget_utilization",
+    "profit",
+    "log_revenue",
+    "log_spend",
+    "log_profit",
+    "platform_2",
+    "platform_3",
+    "obj_Engagement",
+    "obj_Sales",
+    "obj_Traffic"
+  ],
+  "feature_count": 21,
+  "best_mae": 107.66200157717782,
+  "rf_metrics": {
+    "mae": 107.66200157717782,
+    "r2": -1.3999240847956909
+  }
+}

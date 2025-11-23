@@ -9,7 +9,7 @@ project_root = Path(__file__).resolve().parents[1]
 if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
-MODEL_PATH = "ml_models/best_model.pkl"
+MODEL_PATH = "ml_models/rf_tuned.pkl"
 FEATURES_CSV = "database/ml_campaign_features.csv"
 
 if not os.path.exists(MODEL_PATH):
