@@ -1,107 +1,63 @@
 import pandas as pd
-from sqlalchemy import text
-from app.db_connection import get_db_connection
 import numpy as np
 
-def extract_campaigns():
-    engine = get_db_connection()
-    q = "SELECT * FROM campaigns;"
-    return pd.read_sql(text(q), engine)
+# Minimal helper functions: create_campaign_features and extract_platforms
 
-def extract_metrics():
-    engine = get_db_connection()
-    q = "SELECT * FROM metrics;"
-    return pd.read_sql(text(q), engine)
-
-def extract_platforms():
-    engine = get_db_connection()
-    q = "SELECT platform_id, name FROM platforms;"
-    return pd.read_sql(text(q), engine)
-
-def transform_joined(campaigns_df, metrics_df):
-    # join metrics with campaigns (left join ensures metrics keep their rows)
-    df = metrics_df.merge(campaigns_df, on="campaign_id", how="left")
-
-    # safe computations: if missing value fill with zero
-    df['impressions'] = df['impressions'].fillna(0)
-    df['clicks'] = df['clicks'].fillna(0)
-    df['conversions'] = df['conversions'].fillna(0)
-    df['spend'] = df['spend'].fillna(0)
-    df['revenue'] = df['revenue'].fillna(0)
-
-    # compute KPIs 
-    df['CTR'] = (df['clicks'] / df['impressions']).fillna(0) * 100
-    df['CPC'] = (df['spend'] / df['clicks']).replace([float('inf'), -float('inf')], 0).fillna(0)  # replace handles infinity and negative infinity 
-    df['CPA'] = (df['spend'] / df['conversions']).replace([float('inf'), -float('inf')], 0).fillna(0)
-    df['ROI'] = ((df['revenue'] - df['spend']) / df['spend']).replace([float('inf'), -float('inf')], 0).fillna(0) * 100
-
-    # ensure date is a datetime for plotting
-    df['date'] = pd.to_datetime(df['date'])
-    return df
-
-def load_to_df():
-    # Orchestration: extract -> transform -> return final DataFrame
-    campaigns = extract_campaigns()
-    metrics = extract_metrics()
-    df = transform_joined(campaigns, metrics)
-    return df  # this df is ready to use dataframe for dashboards, charts
-
-# Small helper to aggregate campaign-level features for ML # it becomes input for ML models
 def create_campaign_features(df):
+    """Aggregate row-level metrics into campaign-level features CSV for ML."""
+    if df.empty:
+        return pd.DataFrame()
 
-    if 'campaign_id' not in df.columns:
-        raise ValueError("create_campaign_features expects 'campaign_id' column. Found: " + ", ".join(df.columns))
+    # ensure numeric
+    df['impressions'] = pd.to_numeric(df['impressions'], errors='coerce').fillna(0)
+    df['clicks'] = pd.to_numeric(df['clicks'], errors='coerce').fillna(0)
+    df['conversions'] = pd.to_numeric(df['conversions'], errors='coerce').fillna(0)
+    df['spend'] = pd.to_numeric(df['spend'], errors='coerce').fillna(0)
+    df['revenue'] = pd.to_numeric(df['revenue'], errors='coerce').fillna(0)
 
-    # 1. Aggregate campaign-level metrics
-    agg = df.groupby(['campaign_id', 'campaign_name', 'platform_id', 'objective', 'region']).agg(
-        total_impressions=('impressions', 'sum'),
-        total_clicks=('clicks', 'sum'),
-        total_conversions=('conversions', 'sum'),
-        total_spend=('spend', 'sum'),
-        total_revenue=('revenue', 'sum'),
-        avg_ctr=('CTR', 'mean'),
-        avg_roi=('ROI', 'mean'),
-        days_active=('date', 'count'),
-        budget=('budget', 'mean')  # ensure budget included
+    agg = df.groupby(['campaign_id','campaign_name','platform_id','objective','region']).agg(
+        total_impressions=('impressions','sum'),
+        total_clicks=('clicks','sum'),
+        total_conversions=('conversions','sum'),
+        total_spend=('spend','sum'),
+        total_revenue=('revenue','sum'),
+        start_date=('start_date','first'),
+        end_date=('end_date','first'),
+        budget=('budget','first')
     ).reset_index()
 
-    features_df = agg.copy()
+    agg['days_active'] = (pd.to_datetime(agg['end_date']) - pd.to_datetime(agg['start_date'])).dt.days.fillna(0).astype(int)
+    agg['avg_ctr'] = (agg['total_clicks'] / agg['total_impressions']).replace([np.inf, np.nan], 0) * 100
+    agg['conv_rate'] = (agg['total_conversions'] / agg['total_clicks']).replace([np.inf, np.nan], 0)
+    agg['avg_cpc'] = (agg['total_spend'] / agg['total_clicks']).replace([np.inf, np.nan], 0)
+    agg['avg_roi'] = (agg['total_revenue'] / agg['total_spend']).replace([np.inf, np.nan], 0)
+    agg['profit'] = agg['total_revenue'] - agg['total_spend']
 
-    # 2. Add engineered features  
+    # engineered features
+    agg['clicks_per_rupee'] = agg['total_clicks'] / agg['total_spend'].replace({0:1})
+    agg['revenue_per_click'] = agg['total_revenue'] / agg['total_clicks'].replace({0:1})
+    agg['conversions_per_click'] = agg['total_conversions'] / agg['total_clicks'].replace({0:1})
+    agg['budget_utilization'] = agg['total_spend'] / agg['budget'].replace({0:1})
 
-    # SAFE columns (avoid divide-by-zero)
-    features_df['total_spend_safe'] = features_df['total_spend'].replace(0, 1)
-    features_df['total_clicks_safe'] = features_df['total_clicks'].replace(0, 1)
-    features_df['budget_safe'] = features_df['budget'].replace(0, 1)
+    # one-hot platform/objective
+    platform_dummies = pd.get_dummies(agg['platform_id'], prefix='platform', drop_first=True)
+    obj_dummies = pd.get_dummies(agg['objective'], prefix='obj', drop_first=True)
+    features = pd.concat([agg, platform_dummies, obj_dummies], axis=1)
 
-    # Engagement efficiency
-    features_df['clicks_per_rupee'] = features_df['total_clicks'] / features_df['total_spend_safe']
-    features_df['revenue_per_click'] = features_df['total_revenue'] / features_df['total_clicks_safe']
-    features_df['conversions_per_click'] = features_df['total_conversions'] / features_df['total_clicks_safe']
+    # ensure no infs
+    features = features.replace([np.inf, -np.inf], np.nan).fillna(0)
+    return features
 
-    # Budget ratio
-    features_df['budget_utilization'] = features_df['total_spend'] / features_df['budget_safe']
 
-    # Profit + log transforms
-    features_df['profit'] = features_df['total_revenue'] - features_df['total_spend']
-    features_df['log_revenue'] = np.log1p(features_df['total_revenue'].clip(lower=0))
-    features_df['log_spend'] = np.log1p(features_df['total_spend'].clip(lower=0))
-    features_df['log_profit'] = np.log1p(features_df['profit'].clip(lower=0))
+def extract_platforms():
+    """Return small DataFrame mapping platform_id -> platform_name. Uses static mapping if not present."""
+    # If you have a platforms table or file, read it; otherwise return default map
+    try:
+        # attempt to read platforms.csv if present
+        p = Path(__file__).resolve().parents[1] / 'database' / 'platforms.csv'
+        if p.exists():
+            return pd.read_csv(p)
+    except Exception:
+        pass
 
-    # One-hot encoding for platform and objective
-    platform_dummies = pd.get_dummies(features_df['platform_id'], prefix='platform', drop_first=True)
-    obj_dummies = pd.get_dummies(features_df['objective'], prefix='obj', drop_first=True)
-
-    features_df = pd.concat([features_df, platform_dummies, obj_dummies], axis=1)
-
-    # Cleanup
-    features_df.drop(columns=['total_spend_safe', 'total_clicks_safe', 'budget_safe'], inplace=True, errors='ignore')
-    features_df = features_df.replace([np.inf, -np.inf], np.nan).fillna(0)
-
-    return features_df
-
-def extract_predictions():
-    # If you create a predictions table later, this reads it
-    engine = get_db_connection()
-    q = "SELECT * FROM predictions;"
-    return pd.read_sql(text(q), engine)
+    return pd.DataFrame({'platform_id':[1,2,3], 'platform_name':['Google Ads','YouTube','Facebook Ads']})
