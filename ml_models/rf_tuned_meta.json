@@ -1,6 +1,8 @@
 {
   "model_name": "random_forest",
   "model_file": "rf_tuned.pkl",
+  "trained_on_rows": 10,
+  "feature_count": 21,
   "feature_list": [
     "total_impressions",
     "total_clicks",
@@ -24,10 +26,16 @@
     "obj_Sales",
     "obj_Traffic"
   ],
-  "feature_count": 21,
-  "best_mae": 107.66200157717782,
-  "rf_metrics": {
-    "mae": 107.66200157717782,
-    "r2": -1.3999240847956909
+  "target_transform": "log1p",
+  "best_mae_on_original_scale": 167.49699695878888,
+  "metrics": {
+    "rf": {
+      "r2_on_original": -3.8239942268006457,
+      "mae_on_original": 167.49699695878888
+    },
+    "xgboost": {
+      "r2_on_original": -5.726392854625973,
+      "mae_on_original": 199.38217298538018
+    }
   }
 }
