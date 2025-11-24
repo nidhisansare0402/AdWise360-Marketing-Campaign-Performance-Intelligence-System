@@ -1,8 +1,8 @@
 import sys
 from pathlib import Path
-project_root = Path(__file__).resolve().parents[1]  # project root is two levels up from this file
-if str(project_root) not in sys.path:
-    sys.path.insert(0, str(project_root))
+# project_root = Path(__file__).resolve().parents[1]  # project root is two levels up from this file
+# if str(project_root) not in sys.path:
+#     sys.path.insert(0, str(project_root))
 
 # ---------- Standard imports ----------
 import streamlit as st
@@ -17,6 +17,10 @@ from app.data_loader import create_campaign_features, extract_platforms, extract
 # ---------- Page config ----------
 st.set_page_config(page_title="AdWise360 Dashboard", layout="wide")
 st.title("AdWise360 – Marketing Campaign Insights")
+
+current_dir = Path(__file__).resolve().parent
+if str(current_dir) not in sys.path:
+    sys.path.insert(0, str(current_dir))
 
 # ---------- Load data (cached) ----------
 # get_cached_data uses @st.cache_data to keep UI snappy
