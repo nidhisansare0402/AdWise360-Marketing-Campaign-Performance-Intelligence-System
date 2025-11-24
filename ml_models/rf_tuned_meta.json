@@ -27,11 +27,11 @@
     "obj_Traffic"
   ],
   "target_transform": "log1p",
-  "best_mae_on_original_scale": 167.49699695878888,
+  "best_mae_on_original_scale": 167.49699695878866,
   "metrics": {
     "rf": {
-      "r2_on_original": -3.8239942268006457,
-      "mae_on_original": 167.49699695878888
+      "r2_on_original": -3.8239942268006404,
+      "mae_on_original": 167.49699695878866
     },
     "xgboost": {
       "r2_on_original": -5.726392854625973,
