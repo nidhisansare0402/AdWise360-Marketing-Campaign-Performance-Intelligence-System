@@ -1,7 +1,3 @@
-# app/app.py
-# AdWise360 Streamlit dashboard - cleaned, defensive, and easy to explain.
-
-# ---------- DEV: ensure project root is on sys.path (helps Streamlit find 'app' package) ----------
 import sys
 from pathlib import Path
 project_root = Path(__file__).resolve().parents[1]  # project root is two levels up from this file
@@ -183,34 +179,45 @@ with tab_raw:
 
 with tab_preds:
     st.write("### Predicted Campaign ROI")
-    # show model info
+
+    # Show which model file the app will try to use
     model_info = "rf_tuned.pkl"
     try:
-        import joblib, os
-        model_path = os.path.join("ml_models", model_info)
-        if os.path.exists(model_path):
+        from pathlib import Path
+        proj_root = Path(__file__).resolve().parents[1]   # project root
+        model_path = proj_root / "ml_models" / model_info
+        if model_path.exists():
             st.sidebar.success(f"Using model: {model_info}")
         else:
-            st.sidebar.info("No trained model found; run ml/train_model.py")
+            st.sidebar.info("No trained model found; run ml/train_model.py (or commit ml_models/rf_tuned.pkl).")
     except Exception:
-        pass
+        # non-fatal: we don't want the whole UI to crash if path logic fails
+        st.sidebar.info("Model detection skipped (path error).")
 
+    # Predictions CSV: look relative to project root so it works on Streamlit Cloud
     try:
-        preds = pd.read_csv("database/predictions_output.csv")
-        # optionally show only relevant columns
-        cols_to_show = ['campaign_id','campaign_name','platform_id','objective','region',
-                        'total_impressions','total_clicks','total_conversions',
-                        'total_spend','total_revenue','avg_roi','predicted_roi']
-        display = preds[cols_to_show] if set(cols_to_show).issubset(preds.columns) else preds
-        st.dataframe(display)
-        st.download_button(
-            label="Download Predicted ROI (CSV)",
-            data=preds.to_csv(index=False).encode('utf-8'),
-            file_name="predicted_roi.csv",
-            mime="text/csv"
-        )
-    except FileNotFoundError:
-        st.info("No predictions available yet. Run your ML script to generate predictions.")
+        preds_path = proj_root / "database" / "predictions_output.csv"
+        if not preds_path.exists():
+            st.info("No predictions available yet. Run ml/generate_predictions.py to produce database/predictions_output.csv.")
+        else:
+            preds = pd.read_csv(preds_path)
+            # show a sensible subset of columns if available
+            cols_to_show = [
+                'campaign_id','campaign_name','platform_id','objective','region',
+                'total_impressions','total_clicks','total_conversions',
+                'total_spend','total_revenue','avg_roi','predicted_roi'
+            ]
+            display = preds[cols_to_show] if set(cols_to_show).issubset(preds.columns) else preds
+            st.dataframe(display)
+            st.download_button(
+                label="Download Predicted ROI (CSV)",
+                data=preds.to_csv(index=False).encode('utf-8'),
+                file_name="predicted_roi.csv",
+                mime="text/csv"
+            )
+    except Exception as e:
+        st.error(f"Error loading predictions: {e}")
+
 
 # ---------- Download filtered data ----------
 st.write("")  # spacing
