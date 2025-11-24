@@ -184,7 +184,7 @@ with tab_raw:
 with tab_preds:
     st.write("### Predicted Campaign ROI")
     # show model info
-    model_info = "best_model.pkl"
+    model_info = "rf_tuned.pkl"
     try:
         import joblib, os
         model_path = os.path.join("ml_models", model_info)
