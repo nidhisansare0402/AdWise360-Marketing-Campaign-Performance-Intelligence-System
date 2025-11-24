@@ -1,12 +1,17 @@
 import sys
-from pathlib import Path
-current_dir = Path(__file__).resolve().parent
-if str(current_dir) not in sys.path:
-    sys.path.insert(0, str(current_dir))
-
 import streamlit as st
 import altair as alt
 import pandas as pd
+from pathlib import Path
+
+project_root = Path(__file__).resolve().parents[1]  # project root
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
+# current_dir = Path(__file__).resolve().parent
+# if str(current_dir) not in sys.path:
+#     sys.path.insert(0, str(current_dir))
+
+
 from datetime import datetime, timedelta, timezone
 
 from app.etl import get_cached_data, refresh_data
@@ -127,7 +132,7 @@ with tab3:
 with tab4:
     st.write('### Predicted Campaign ROI')
     try:
-        preds = pd.read_csv(PROJECT_ROOT / 'database' / 'predictions_output.csv')
+        preds = pd.read_csv("database/predictions_output.csv")
         st.dataframe(preds)
         st.download_button('Download Predicted ROI (CSV)', preds.to_csv(index=False).encode('utf-8'), file_name='predicted_roi.csv')
     except Exception:

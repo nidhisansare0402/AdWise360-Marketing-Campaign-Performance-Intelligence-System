@@ -1,103 +1,93 @@
-import pandas as pd
-import os
 from pathlib import Path
+import pandas as pd
+import numpy as np
 import streamlit as st
-from sqlalchemy import create_engine, text
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
+DATABASE_DIR = PROJECT_ROOT / "database"
 
-def _get_engine_from_secrets_or_env():
-    # Prefer Streamlit secrets, then env var. If missing, raise.
-    try:
-        if hasattr(st, 'secrets') and st.secrets:
-            # support both DATABASE_URL or mysql dict
-            if 'DATABASE_URL' in st.secrets:
-                return create_engine(st.secrets['DATABASE_URL'])
-            if 'mysql' in st.secrets:
-                m = st.secrets['mysql']
-                url = f"mysql+pymysql://{m['user']}:{m['password']}@{m['host']}:{m.get('port',3306)}/{m['db']}"
-                return create_engine(url)
-    except Exception:
-        pass
-
-    db_url = os.environ.get('DATABASE_URL') or os.environ.get('LOCAL_DB_URL')
-    if db_url:
-        return create_engine(db_url)
-
-    raise RuntimeError('No DB configured (use Streamlit secrets or DATABASE_URL)')
+METRICS_CSV = DATABASE_DIR / "metrics.csv"
+CAMPAIGNS_CSV = DATABASE_DIR / "campaigns.csv"
 
 @st.cache_data(ttl=600)
 def get_cached_data():
     """
-    Try DB first; if it fails, fallback to local CSVs in /database.
-    Returns DataFrame with computed CTR/CPC/ROI columns.
+    Read CSVs, join metrics + campaigns, compute KPIs and return DataFrame.
+    Cached for 10 minutes by default.
     """
-    # try DB
+    # Check files
+    if not METRICS_CSV.exists() or not CAMPAIGNS_CSV.exists():
+        st.error(f"CSV fallback missing. Ensure {METRICS_CSV} and {CAMPAIGNS_CSV} exist in repository.")
+        return pd.DataFrame()
+
+    # Read CSVs
     try:
-        engine = _get_engine_from_secrets_or_env()
-        query = text(
-            """
-            SELECT m.*, c.campaign_name, c.platform_id, c.objective, c.region, c.start_date, c.end_date, c.budget
-            FROM metrics m
-            JOIN campaigns c ON m.campaign_id = c.campaign_id;
-            """
-        )
-        df = pd.read_sql(query, engine)
+        metrics = pd.read_csv(METRICS_CSV)
     except Exception as e:
-        # fallback to CSV files in repo
-        st.warning(f"DB connection failed: {e} — using CSV fallback from /database")
-        metrics_csv = PROJECT_ROOT / 'database' / 'metrics.csv'
-        campaigns_csv = PROJECT_ROOT / 'database' / 'campaigns.csv'
-        if metrics_csv.exists() and campaigns_csv.exists():
-            metrics_df = pd.read_csv(metrics_csv)
-            campaigns_df = pd.read_csv(campaigns_csv)
-            df = metrics_df.merge(campaigns_df, on='campaign_id', how='left')
+        st.error(f"Failed to read metrics CSV: {e}")
+        return pd.DataFrame()
+
+    try:
+        campaigns = pd.read_csv(CAMPAIGNS_CSV)
+    except Exception as e:
+        st.error(f"Failed to read campaigns CSV: {e}")
+        return pd.DataFrame()
+
+    # Join
+    try:
+        df = metrics.merge(campaigns, on="campaign_id", how="left", validate="m:1")
+    except Exception:
+        # fallback: conservative merge
+        df = pd.merge(metrics, campaigns, on="campaign_id", how="left")
+
+    # Normalize numeric columns (safe conversion)
+    for col in ["impressions", "clicks", "conversions", "spend", "revenue", "budget"]:
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
         else:
-            st.error('No DB and CSV fallback not found in /database. Add metrics.csv and campaigns.csv to repo.')
-            return pd.DataFrame()
+            df[col] = 0
 
-    # compute KPIs safely
-    df['impressions'] = pd.to_numeric(df['impressions'], errors='coerce').fillna(0)
-    df['clicks'] = pd.to_numeric(df['clicks'], errors='coerce').fillna(0)
-    df['conversions'] = pd.to_numeric(df['conversions'], errors='coerce').fillna(0)
-    df['spend'] = pd.to_numeric(df['spend'], errors='coerce').fillna(0)
-    df['revenue'] = pd.to_numeric(df['revenue'], errors='coerce').fillna(0)
-
-    df['CTR'] = (df['clicks'] / df['impressions']).replace([float('inf'), pd.NA], 0).fillna(0) * 100
-    df['CPC'] = (df['spend'] / df['clicks']).replace([float('inf'), pd.NA], 0).fillna(0)
-    df['ROI'] = (df['revenue'] / df['spend']).replace([float('inf'), pd.NA], 0).fillna(0)
-
-    # ensure date column is datetime if present
-    if 'date' in df.columns:
+    # Dates
+    if "date" in df.columns:
         try:
-            df['date'] = pd.to_datetime(df['date'])
+            df["date"] = pd.to_datetime(df["date"], errors="coerce")
         except Exception:
             pass
 
-    return df
+    # KPIs (safe math; avoid divide-by-zero)
+    df["CTR"] = (df["clicks"] / df["impressions"]).replace([np.inf, -np.inf], 0).fillna(0) * 100
+    df["CPC"] = (df["spend"] / df["clicks"]).replace([np.inf, -np.inf], 0).fillna(0)
+    df["ROI"] = (df["revenue"] / df["spend"]).replace([np.inf, -np.inf], 0).fillna(0)
 
+    # Keep consistent column types / names expected by the rest of pipeline
+    # e.g., campaign_id, campaign_name, platform_id, objective, region, start_date, end_date, budget
+    expected_cols = ["campaign_id","campaign_name","platform_id","objective","region","start_date","end_date","budget"]
+    for c in expected_cols:
+        if c not in df.columns:
+            df[c] = np.nan
+
+    return df
 
 def refresh_data():
     """
-    Clear cached get_cached_data and set last_refresh in session_state.
+    Clear the cached get_cached_data() and write a last_refresh timestamp into st.session_state.
+    Call this from a Streamlit button (on_click) or in UI code when needed.
     """
+    # Clear cache for get_cached_data (works when it's decorated with @st.cache_data)
     try:
-        if 'get_cached_data' in globals():
-            try:
-                get_cached_data.clear()
-            except Exception:
-                try:
-                    st.cache_data.clear()
-                except Exception:
-                    pass
+        get_cached_data.clear()
     except Exception:
-        pass
+        try:
+            st.cache_data.clear()
+        except Exception:
+            pass
 
+    # Set last refresh timestamp (UTC ISO format)
     try:
-        st.session_state['last_refresh'] = datetime.now(timezone.utc).isoformat()
+        st.session_state["last_refresh"] = datetime.now(timezone.utc).isoformat()
     except Exception:
+        # session_state might not exist in certain contexts, ignore silently
         pass
 
     return True
-

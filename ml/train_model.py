@@ -1,9 +1,10 @@
 import os
 import pandas as pd
+import joblib
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import r2_score, mean_absolute_error
-import joblib
+
 
 os.makedirs('ml_models', exist_ok=True)
 
