@@ -91,11 +91,11 @@ else:
     total_impressions = total_clicks = avg_ctr = avg_cpc = avg_roi = 0
 
 c1,c2,c3,c4,c5 = st.columns(5)
-c1.metric('Total Impressions', f"{total_impressions:,}")
-c2.metric('Total Clicks', f"{total_clicks:,}")
-c3.metric('Avg CTR (%)', avg_ctr)
-c4.metric('Avg CPC (₹)', avg_cpc)
-c5.metric('Avg ROI (%)', avg_roi)
+c1.metric("Total Impressions", f"{total_impressions:,}")
+c2.metric("Total Clicks", f"{total_clicks:,}")
+c3.metric("Avg CTR", f"{avg_ctr:.2f}%")
+c4.metric("Avg CPC", f"₹{avg_cpc:.2f}")
+c5.metric("Avg ROI", f"{avg_roi:.2f}%")
 
 # tabs
 tab1,tab2,tab3,tab4 = st.tabs(['Overview','Charts','Raw Data','Predictions'])
@@ -130,13 +130,61 @@ with tab3:
         st.info('No data to show.')
 
 with tab4:
-    st.write('### Predicted Campaign ROI')
+    st.write("### Predicted Campaign ROI")
+
+    # Path used by the app for saved predictions
+    preds_path = "database/predictions_output.csv"
+
     try:
-        preds = pd.read_csv("database/predictions_output.csv")
-        st.dataframe(preds)
-        st.download_button('Download Predicted ROI (CSV)', preds.to_csv(index=False).encode('utf-8'), file_name='predicted_roi.csv')
-    except Exception:
-        st.info('No predictions available yet. Run ml/train_model.py and ml/generate_predictions.py to create predictions.')
+        # 1) Load the raw predictions CSV (keeps original numeric values in preds)
+        preds = pd.read_csv(preds_path)
+
+        # 2) Quick model info / summary (optional: read from metadata if you save it)
+        model_name = "rf_tuned.pkl"
+        st.markdown(f"**Model:** `{model_name}` &nbsp; • &nbsp; **Rows:** {len(preds):,}")
+
+        # 3) Prepare a nicely formatted display copy (keeps preds unchanged for CSV download)
+        display = preds.copy()
+
+        # Format percents: avg_ctr, avg_roi, predicted_roi
+        for pct_col in ("avg_ctr", "avg_roi", "predicted_roi"):
+            if pct_col in display.columns:
+                display[pct_col] = display[pct_col].apply(
+                    lambda v: f"{v:.2f}%" if pd.notnull(v) else ""
+                )
+
+        # Format money columns
+        for money_col in ("total_spend", "total_revenue", "profit"):
+            if money_col in display.columns:
+                display[money_col] = display[money_col].apply(
+                    lambda v: f"₹{v:,.2f}" if pd.notnull(v) else ""
+                )
+
+        # Optional: format impressions/clicks with thousands separator
+        for int_col in ("total_impressions", "total_clicks", "total_conversions"):
+            if int_col in display.columns:
+                display[int_col] = display[int_col].apply(
+                    lambda v: f"{int(v):,}" if pd.notnull(v) else ""
+                )
+
+        # 4) Show the formatted table + download buttons
+        st.dataframe(display, use_container_width=True)
+
+        # Download the raw numeric CSV (original preds) for ML / external use
+        csv_bytes = preds.to_csv(index=False).encode("utf-8")
+        st.download_button(
+            label="Download Predicted ROI (CSV)",
+            data=csv_bytes,
+            file_name="predicted_roi.csv",
+            mime="text/csv",
+        )
+
+    except FileNotFoundError:
+        st.info("No predictions available yet. Run `ml/train_model.py` and `ml/generate_predictions.py` to create predictions.")
+    except Exception as e:
+        # show helpful error to user (use st.error for unexpected problems)
+        st.error(f"Failed to load predictions: {e}")
+
 
 # download filtered data
 st.download_button('Download filtered data (CSV)', filtered.to_csv(index=False).encode('utf-8'), 'adwise_filtered.csv', 'text/csv')
