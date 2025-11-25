@@ -158,30 +158,7 @@ with tab4:
                 # fallback: show id as string
                 display["platform_name"] = display["platform_id"].astype(str) if "platform_id" in display.columns else ""
 
-        # 4. Model Info (simple, hardcoded values you requested)
-        st.markdown("**Model info**")
-        st.write("- Model: Random Forest (tuned)")
-        st.write("- Trained on: 10 campaigns")
-        st.write("- MAE: 123")
-        st.write("- Features used: 28")
-        st.write("- Last trained: 24-Nov-2025")
-
-        # 5. Dataset Summary (computed simply)
-        total_campaigns = int(display["campaign_id"].nunique()) if "campaign_id" in display.columns else 0
-        # count distinct days from metrics.csv if exists, else fallback to rows in preds
-        try:
-            metrics = pd.read_csv(metrics_path)
-            total_days = int(metrics["date"].nunique()) if "date" in metrics.columns else len(metrics)
-        except Exception:
-            total_days = 0
-        distinct_platforms = int(display["platform_id"].nunique()) if "platform_id" in display.columns else 0
-
-        st.markdown("**Dataset summary**")
-        st.write(f"- Total Campaigns: {total_campaigns}")
-        st.write(f"- Total Days of Data: {total_days}")
-        st.write(f"- Distinct Platforms: {distinct_platforms}")
-
-        # 6. Simple formatting for display copy (keep preds raw for download)
+        # 4. Simple formatting for display copy (keep preds raw for download)
         formatted = display.copy()
 
         # Format percents
@@ -199,7 +176,7 @@ with tab4:
             if int_col in formatted.columns:
                 formatted[int_col] = formatted[int_col].apply(lambda v: f"{int(v):,}" if pd.notnull(v) else "")
 
-        # 7. Show the table and offer raw download
+        # 4. Show the table and offer raw download
         st.write("#### Predictions (formatted)")
         st.dataframe(formatted, use_container_width=True)
 
