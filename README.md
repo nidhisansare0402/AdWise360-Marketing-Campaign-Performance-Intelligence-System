@@ -45,20 +45,61 @@ This project combines SQL → ETL → Feature Engineering → ML → Streamlit D
 - Synthetic dataset generator for campaigns & metrics
 - Extensible to real **Google/Facebook Ads API** later
 
-### Deployment
+#### Deployment
 - Fully deployed on **Streamlit Cloud**
 - Auto-fallback:
   - Uses CSV when MySQL is not available on cloud
 - Modular project structure:
 
 ## Architecture
-flowchart TD
-    A[CSV / MySQL Data] --> B[ETL Layer <br> get_cached_data()]
-    B --> C[Feature Engineering <br> create_campaign_features()]
-    C --> D[ML Model <br> Random Forest Regression]
-    D --> E[Predictions CSV]
-    B --> F[Streamlit Dashboard]
-    E --> F
+```mermaid
+flowchart LR
+  subgraph Data
+    A1[CSV files (database/*.csv)]
+    A2[MySQL DB]
+    A3[Ad Platform APIs<br/>(Google Ads, Meta, YouTube)]
+  end
+
+  subgraph Ingest
+    B[ETL layer<br/>(app/etl.py)]
+  end
+
+  subgraph Processing
+    C[Feature Engineering<br/>(app/data_loader.py)]
+    D[ML Training<br/>(ml/train_model.py)]
+    E[Model Registry / Artifacts<br/>(ml_models/*.pkl)]
+    F[Prediction Generator<br/>(ml/generate_predictions.py)]
+  end
+
+  subgraph Storage
+    G[Predictions table / CSV<br/>(database/predictions_output.csv)]
+    H[ML features CSV<br/>(database/ml_campaign_features.csv)]
+  end
+
+  subgraph UI
+    I[Streamlit Dashboard<br/>(app/dashboard.py / run.py)]
+  end
+
+  subgraph Deployment
+    J[Streamlit Cloud] 
+    K[Optional: Backend API (FastAPI)]
+  end
+
+  A1 --> B
+  A2 --> B
+  A3 --> B
+  B --> C
+  C --> D
+  D --> E
+  E --> F
+  C --> F
+  F --> G
+  F --> H
+  G --> I
+  H --> I
+  I --> J
+  E --> K
+  K --> I
 
 
 ## Tech Stack
@@ -85,10 +126,10 @@ Here’s the database structure of the AdWise360 project:
 | **predictions** | Stores machine learning results |
 
 ## Machine Learning Pipeline
-### Target Variable
+#### Target Variable
 - `avg_roi` — the average Return on Investment per campaign.
 
-### 1. Data Preparation
+#### 1. Data Preparation
 - Load raw joined dataset (campaigns + metrics).
 - Convert data types (dates, floats).
 - Compute KPIs:
@@ -97,7 +138,7 @@ Here’s the database structure of the AdWise360 project:
   - ROI = (revenue – spend) / spend × 100  
 - Remove invalid or zero-division rows safely.
 
-### 2. Feature Engineering
+#### 2. Feature Engineering
 Engineered features include:
 - Basic Aggregates
   - total_impressions  
@@ -124,22 +165,22 @@ Engineered features include:
   - platform_x  
   - obj_y  
 
-### 3. Model Selection
+#### 3. Model Selection
 - Tuned **Random Forest Regression**
 - Chosen because:
   - Works well with small, noisy, non-linear datasets  
   - Requires less parameter tuning  
   - Stable + interpretable  
 
-### 4. Model Training
+#### 4. Model Training
 Scripts used:
 - `scripts/build_ml_features.py`
 - `ml/train_model.py`
 
-### 5. Prediction Generation
+#### 5. Prediction Generation
 - `python -m ml.generate_predictions`
 
-### 6. Evaluation
+#### 6. Evaluation
 Key metrics used:
 - R² score  
 - Mean Absolute Error (MAE)  
@@ -159,7 +200,7 @@ AdWise360 is fully deployed on **Streamlit Cloud**, using a cloud-friendly archi
 - Uses clean `run.py` entrypoint for compatibility  
 - Supports future API integration without UI changes  
 
-### Deployment-Focused Files
+#### Deployment-Focused Files
 - run.py → Cloud entrypoint
 - app/dashboard.py → Streamlit UI
 - app/etl.py → CSV ETL for cloud
@@ -173,30 +214,30 @@ AdWise360 is fully deployed on **Streamlit Cloud**, using a cloud-friendly archi
 ### Dashboard Main View
 ![Dashboard](images/dashboard.png)
 
-### Charts
+#### Charts
 ![Charts](images/charts.png)
 
-### Predictions Table
+#### Predictions Table
 ![Predictions](images/predictions.png)
 
 ## How to Run Locally
-### Clone the Repository
+#### Clone the Repository
 - `git clone https://github.com/nidhisansare0402/AdWise360-Marketing-Campaign-Performance-Intelligence-System`
 - `cd AdWise360-Marketing-Campaign-Performance-Intelligence-System`
 
-### Install Requirements
+#### Install Requirements
 - `pip install -r requirements.txt`
 
-### Run the Dashboard
+#### Run the Dashboard
 - `streamlit run run.py`
 
-### Rebuild ML Features
+#### Rebuild ML Features
 - `python scripts/build_ml_features.py`
 
-### Train ML Model
+#### Train ML Model
 - `python ml/train_model.py`
 
-### Generate Predictions
+#### Generate Predictions
 - `python -m ml.generate_predictions`
 
 ## Future Improvements
