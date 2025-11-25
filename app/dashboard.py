@@ -129,61 +129,58 @@ with tab3:
     else:
         st.info('No data to show.')
 
-with tab4:
+with tab_preds:
     st.write("### Predicted Campaign ROI")
 
-    # Path used by the app for saved predictions
     preds_path = "database/predictions_output.csv"
 
     try:
-        # 1) Load the raw predictions CSV (keeps original numeric values in preds)
+        # 1. Load predictions
         preds = pd.read_csv(preds_path)
 
-        # 2) Quick model info / summary (optional: read from metadata if you save it)
-        model_name = "rf_tuned.pkl"
-        st.markdown(f"**Model:** `{model_name}` &nbsp; • &nbsp; **Rows:** {len(preds):,}")
-
-        # 3) Prepare a nicely formatted display copy (keeps preds unchanged for CSV download)
+        # Make a copy for display (raw preds stay unchanged for download)
         display = preds.copy()
 
-        # Format percents: avg_ctr, avg_roi, predicted_roi
-        for pct_col in ("avg_ctr", "avg_roi", "predicted_roi"):
-            if pct_col in display.columns:
-                display[pct_col] = display[pct_col].apply(
-                    lambda v: f"{v:.2f}%" if pd.notnull(v) else ""
+        # 2. Format percentages
+        percent_cols = ["avg_ctr", "avg_roi", "predicted_roi"]
+        for col in percent_cols:
+            if col in display.columns:
+                display[col] = display[col].apply(
+                    lambda x: f"{x:.2f}%" if pd.notnull(x) else ""
                 )
 
-        # Format money columns
-        for money_col in ("total_spend", "total_revenue", "profit"):
-            if money_col in display.columns:
-                display[money_col] = display[money_col].apply(
-                    lambda v: f"₹{v:,.2f}" if pd.notnull(v) else ""
+        # 3. Format money columns
+        money_cols = ["total_spend", "total_revenue", "profit"]
+        for col in money_cols:
+            if col in display.columns:
+                display[col] = display[col].apply(
+                    lambda x: f"₹{x:,.2f}" if pd.notnull(x) else ""
                 )
 
-        # Optional: format impressions/clicks with thousands separator
-        for int_col in ("total_impressions", "total_clicks", "total_conversions"):
-            if int_col in display.columns:
-                display[int_col] = display[int_col].apply(
-                    lambda v: f"{int(v):,}" if pd.notnull(v) else ""
+        # 4. Format large integers (impressions, clicks)
+        int_cols = ["total_impressions", "total_clicks", "total_conversions"]
+        for col in int_cols:
+            if col in display.columns:
+                display[col] = display[col].apply(
+                    lambda x: f"{int(x):,}" if pd.notnull(x) else ""
                 )
 
-        # 4) Show the formatted table + download buttons
+        # 5. Show the prediction table
         st.dataframe(display, use_container_width=True)
 
-        # Download the raw numeric CSV (original preds) for ML / external use
-        csv_bytes = preds.to_csv(index=False).encode("utf-8")
+        # 6. Download button (raw CSV)
         st.download_button(
-            label="Download Predicted ROI (CSV)",
-            data=csv_bytes,
+            label="Download Predictions (CSV)",
+            data=preds.to_csv(index=False).encode("utf-8"),
             file_name="predicted_roi.csv",
-            mime="text/csv",
+            mime="text/csv"
         )
 
     except FileNotFoundError:
-        st.info("No predictions available yet. Run `ml/train_model.py` and `ml/generate_predictions.py` to create predictions.")
+        st.info("No predictions found. Run training + prediction scripts first.")
     except Exception as e:
-        # show helpful error to user (use st.error for unexpected problems)
-        st.error(f"Failed to load predictions: {e}")
+        st.error(f"Could not load predictions: {e}")
+
 
 
 # download filtered data
