@@ -219,21 +219,45 @@ AdWise360 is fully deployed on **Streamlit Cloud**, using a cloud-friendly archi
 `python -m ml.generate_predictions`
 
 ## Future Improvements
-- Integrate real **Google Ads API** and **Meta Ads API**
+- Expand Dataset
+- Integrate API Data
+- Improve ML Model Accuracy
+- Add New Dashboard Features
+- Improve Project Workflow
+
 
 ## Project Structure
 
 AdWise360/
 │
+├── app/
+│   ├── dashboard.py            # Streamlit UI (main app)
+│   ├── etl.py                  # CSV-based ETL & caching layer
+│   ├── data_loader.py          # KPI calculations + feature engineering
+│   └── __init__.py
+│
+├── ml/
+│   ├── train_model.py          # Train tuned Random Forest
+│   ├── generate_predictions.py # Generate predicted ROI
+│   ├── rf_tuned.pkl            # Saved model (after training)
+│   └── __init__.py
+│
+├── scripts/
+│   ├── synthetic_data.py       # Data generator 
+│   ├── build_ml_features.py    # Rebuilds ML feature dataset
+│   └── diagnostics.py          # Model evaluation & bias checks
+│
 ├── database/
-│ ├── adwise360_schema.sql
-│ ├── adwise360_test_data.sql
-│ └── ERD_AdWise360.png
+│   ├── campaigns.csv
+│   ├── metrics.csv
+│   ├── ml_campaign_features.csv
+│   └── predictions_output.csv
 │
-├── docs/
-│ ├── Day1_Marketing_Analytics_Interview_Notes.docx
-│ ├── Day2_Database_Design_Interview_Notes.docx
+├── images/                     # Dashboard screenshots 
 │
+├── run.py                      # Cloud entry point 
+├── requirements.txt
 └── README.md
+
 
 
