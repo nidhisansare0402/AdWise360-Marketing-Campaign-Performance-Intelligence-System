@@ -1,7 +1,7 @@
 # AdWise360-Marketing-Campaign-Performance-Intelligence-System
 **“AdWise360 – Turning raw marketing data into actionable intelligence for smarter ad decisions.”**
 
-### Problem Statement
+## Problem Statement
 
 Digital marketing teams handle large, unstructured, and isolated datasets from multiple ad platforms.
 Manually analyzing these to understand ROI, CTR, or conversion trends is time-consuming and error-prone.
@@ -12,7 +12,7 @@ AdWise360 aims to automate this process by providing a **centralized, intelligen
 - [Features](#features)
 - [Architecture](#architecture)
 - [Tech Stack](#tech-stack)
-- [Entity Relationship Diagram](#Entity Relationship Diagram)
+- [Entity Relationship Diagram](#entity-relationship-diagram)
 - [Machine Learning Pipeline](#machine-learning-pipeline)
 - [Deployment](#deployment)
 - [Screenshots](#screenshots)
@@ -20,12 +20,12 @@ AdWise360 aims to automate this process by providing a **centralized, intelligen
 - [Future Improvements](#future-improvements)
 - [Project Structure](#project-structure)
 
-### Overview
+## Overview
 
 An end-to-end Marketing Analytics + Machine Learning dashboard built to analyze cross-platform ad campaigns (Google Ads, YouTube, Facebook) and predict future ROI using engineered features and a tuned Random Forest model.
 This project combines SQL → ETL → Feature Engineering → ML → Streamlit Dashboard → Deployment, designed to simulate real ad-agency work
 
-### Features
+## Features
 
 #### **Dashboard Analytics**
 - KPI Cards: **CTR, CPC, ROI, Impressions, Clicks**
@@ -65,7 +65,7 @@ flowchart TD
     E --> F
 
 
-### Tech Stack
+## Tech Stack
 
 - **Languages:** Python, SQL, MySQL  
 - **Libraries:** Pandas, NumPy, Scikit-Learn, Streamlit, Altair, Joblib  
@@ -74,7 +74,7 @@ flowchart TD
 - **Database Schema:** [dbdiagram.io](https://dbdiagram.io/)  
 
 
-### Entity Relationship Diagram (ERD)
+## Entity Relationship Diagram (ERD)
 
 Here’s the database structure of the AdWise360 project:
 
@@ -83,7 +83,7 @@ Here’s the database structure of the AdWise360 project:
 </p>
 
 
-#### Tables Overview
+## Tables Overview
 
 | Table | Description |
 |--------|--------------|
@@ -183,7 +183,7 @@ AdWise360 is fully deployed on **Streamlit Cloud**, using a cloud-friendly archi
 - app/data_loader.py → KPIs + feature engineering
 
 
-### **Live App URL**
+## Live App URL
 [(AdWise360 App URL)](https://adwise360-marketing-campaign-performance-intelligence-system-k.streamlit.app/)
 
 ## 🖼 Screenshots
@@ -218,10 +218,10 @@ AdWise360 is fully deployed on **Streamlit Cloud**, using a cloud-friendly archi
 ### Generate Predictions
 `python -m ml.generate_predictions`
 
-## **Future Improvements
+## Future Improvements
 - Integrate real **Google Ads API** and **Meta Ads API**
 
-### Project Structure
+## Project Structure
 
 AdWise360/
 │
