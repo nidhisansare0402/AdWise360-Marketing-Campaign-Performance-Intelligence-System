@@ -133,51 +133,85 @@ with tab4:
     st.write("### Predicted Campaign ROI")
 
     preds_path = "database/predictions_output.csv"
+    metrics_path = "database/metrics.csv"  # used for dataset summary (days)
 
     try:
-        # 1. Load predictions
+        # 1. Load predictions (raw)
         preds = pd.read_csv(preds_path)
 
-        # Make a copy for display (raw preds stay unchanged for download)
-        display = preds.copy()
+        # 2. Remove internal dummy columns that start with 'platform_' or 'obj_'
+        #    This hides platform_2, platform_3, obj_Engagement, obj_Sales, etc.
+        cols_to_hide_prefix = ("platform_", "obj_")
+        visible_cols = [c for c in preds.columns if not c.startswith(cols_to_hide_prefix)]
+        display = preds[visible_cols].copy()
 
-        # 2. Format percentages
-        percent_cols = ["avg_ctr", "avg_roi", "predicted_roi"]
-        for col in percent_cols:
-            if col in display.columns:
-                display[col] = display[col].apply(
-                    lambda x: f"{x:.2f}%" if pd.notnull(x) else ""
-                )
+        # 3. Add a friendly platform_name column if platform_id exists
+        if "platform_id" in display.columns:
+            try:
+                platforms_df = extract_platforms()  # returns platform_id / platform_name
+                if "platform_name" in platforms_df.columns:
+                    pmap = dict(zip(platforms_df["platform_id"], platforms_df["platform_name"]))
+                else:
+                    pmap = dict(zip(platforms_df["platform_id"], platforms_df[platforms_df.columns[1]]))
+                display["platform_name"] = display["platform_id"].map(pmap).fillna(display["platform_id"].astype(str))
+            except Exception:
+                # fallback: show id as string
+                display["platform_name"] = display["platform_id"].astype(str) if "platform_id" in display.columns else ""
 
-        # 3. Format money columns
-        money_cols = ["total_spend", "total_revenue", "profit"]
-        for col in money_cols:
-            if col in display.columns:
-                display[col] = display[col].apply(
-                    lambda x: f"₹{x:,.2f}" if pd.notnull(x) else ""
-                )
+        # 4. Model Info (simple, hardcoded values you requested)
+        st.markdown("**Model info**")
+        st.write("- Model: Random Forest (tuned)")
+        st.write("- Trained on: 10 campaigns")
+        st.write("- MAE: 123")
+        st.write("- Features used: 28")
+        st.write("- Last trained: 24-Nov-2025")
 
-        # 4. Format large integers (impressions, clicks)
-        int_cols = ["total_impressions", "total_clicks", "total_conversions"]
-        for col in int_cols:
-            if col in display.columns:
-                display[col] = display[col].apply(
-                    lambda x: f"{int(x):,}" if pd.notnull(x) else ""
-                )
+        # 5. Dataset Summary (computed simply)
+        total_campaigns = int(display["campaign_id"].nunique()) if "campaign_id" in display.columns else 0
+        # count distinct days from metrics.csv if exists, else fallback to rows in preds
+        try:
+            metrics = pd.read_csv(metrics_path)
+            total_days = int(metrics["date"].nunique()) if "date" in metrics.columns else len(metrics)
+        except Exception:
+            total_days = 0
+        distinct_platforms = int(display["platform_id"].nunique()) if "platform_id" in display.columns else 0
 
-        # 5. Show the prediction table
-        st.dataframe(display, use_container_width=True)
+        st.markdown("**Dataset summary**")
+        st.write(f"- Total Campaigns: {total_campaigns}")
+        st.write(f"- Total Days of Data: {total_days}")
+        st.write(f"- Distinct Platforms: {distinct_platforms}")
 
-        # 6. Download button (raw CSV)
+        # 6. Simple formatting for display copy (keep preds raw for download)
+        formatted = display.copy()
+
+        # Format percents
+        for pct_col in ("avg_ctr", "avg_roi", "predicted_roi"):
+            if pct_col in formatted.columns:
+                formatted[pct_col] = formatted[pct_col].apply(lambda v: f"{v:.2f}%" if pd.notnull(v) else "")
+
+        # Format money columns
+        for money_col in ("total_spend", "total_revenue", "profit"):
+            if money_col in formatted.columns:
+                formatted[money_col] = formatted[money_col].apply(lambda v: f"₹{v:,.2f}" if pd.notnull(v) else "")
+
+        # Nicely format big integer columns
+        for int_col in ("total_impressions", "total_clicks", "total_conversions"):
+            if int_col in formatted.columns:
+                formatted[int_col] = formatted[int_col].apply(lambda v: f"{int(v):,}" if pd.notnull(v) else "")
+
+        # 7. Show the table and offer raw download
+        st.write("#### Predictions (formatted)")
+        st.dataframe(formatted, use_container_width=True)
+
         st.download_button(
-            label="Download Predictions (CSV)",
+            label="Download raw predictions CSV",
             data=preds.to_csv(index=False).encode("utf-8"),
-            file_name="predicted_roi.csv",
-            mime="text/csv"
+            file_name="predicted_roi_raw.csv",
+            mime="text/csv",
         )
 
     except FileNotFoundError:
-        st.info("No predictions found. Run training + prediction scripts first.")
+        st.info("No predictions found. Run ml/train_model.py and ml/generate_predictions.py first.")
     except Exception as e:
         st.error(f"Could not load predictions: {e}")
 
