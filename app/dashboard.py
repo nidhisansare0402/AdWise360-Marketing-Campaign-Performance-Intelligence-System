@@ -177,7 +177,6 @@ with tab4:
                 formatted[int_col] = formatted[int_col].apply(lambda v: f"{int(v):,}" if pd.notnull(v) else "")
 
         # 4. Show the table and offer raw download
-        st.write("#### Predictions (formatted)")
         st.dataframe(formatted, use_container_width=True)
 
         st.download_button(
