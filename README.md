@@ -9,15 +9,44 @@ AdWise360 aims to automate this process by providing a **centralized, intelligen
 
 ### Overview
 
-**AdWise360** is an end-to-end **marketing analytics and intelligence system** designed to help organizations to analyze, predict, and optimize digital ad campaign performance.
-The system brings together **data engineering**, **data analytics**, and **machine learning** to deliver a **360° view of campaign effectiveness** across platforms such as **Google Ads, Facebook Ads, and YouTube**.
+An end-to-end Marketing Analytics + Machine Learning dashboard built to analyze cross-platform ad campaigns (Google Ads, YouTube, Facebook) and predict future ROI using engineered features and a tuned Random Forest model.
+This project combines SQL → ETL → Feature Engineering → ML → Streamlit Dashboard → Deployment, designed to simulate real ad-agency work
 
-### Project Goals
+### Features
 
-- Design a **realistic, normalized marketing database schema** in MySQL.  
-- Analyze campaign KPIs like CTR, CPC, CPA, and ROI.  
-- Build an ML-ready structure to predict campaign performance (High / Low).  
-- Create insights that connect marketing analytics with data science.
+**Dashboard Analytics**
+-KPI Cards: CTR, CPC, ROI, Impressions, Clicks
+-Filters: Platform, Region, Objective
+-Charts:
+  -ROI Trend
+  -Impressions vs Clicks
+  -CTR vs ROI Scatter
+
+**Machine Learning**
+-Tuned Random Forest Regression
+-Feature-engineered dataset
+-Predicts campaign-level ROI
+-ML features downloadable inside UI
+-Clean predictions table
+
+**Data Engineering**
+-CSV-based ETL (Cloud-friendly)
+-SQL DB schema 
+-Synthetic dataset generator for campaigns & metrics
+-Extensible to real Google/Facebook API later
+
+**Deployment**
+-Fully deployed on Streamlit Cloud
+-Auto-detects missing DB and switches to CSV fallback
+-Clean UI layout 
+
+###Tech Stack
+
+-Languages: Python, SQL, MySQL
+-Libraries: Pandas, NumPy, Scikit-Learn, Streamlit, Altair, Joblib
+-ML: Random Forest Regression (tuned), Feature Engineering
+-Deployment: [Streamlit Cloud](https://share.streamlit.io/)
+-Database Schema: [dbdiagram.io](https://dbdiagram.io/)
 
 ### Entity Relationship Diagram (ERD)
 
@@ -27,27 +56,17 @@ Here’s the database structure of the AdWise360 project:
   <img src="database/ERD_AdWise360.png" alt="AdWise360 ER Diagram" width="600"/>
 </p>
 
-### Tech Stack
-
-| Layer | Technology Used |
-|--------|----------------|
-| **Database** | MySQL Workbench |
-| **Backend/Analysis** | Python (pandas, NumPy, scikit-learn) |
-| **Visualization** | Matplotlib, Seaborn |
-| **Documentation** | Word |
-| **Version Control** | Git & GitHub |
-| **ERD Design Tool** | [dbdiagram.io](https://dbdiagram.io/) |
 
 #### Tables Overview
 
 | Table | Description |
 |--------|--------------|
-| **platforms** | Stores ad platform details (Google Ads, Facebook Ads, etc.) |
+| **platforms** | Stores ad platform details |
 | **campaigns** | Contains campaign info like name, objective, region, and budget |
 | **metrics** | Holds daily performance data — impressions, clicks, conversions, spend, and revenue |
-| **predictions** | Stores machine learning results (performance category, confidence score) |
+| **predictions** | Stores machine learning results |
 
-### Folder Structure
+### Project Structure
 
 AdWise360/
 │
