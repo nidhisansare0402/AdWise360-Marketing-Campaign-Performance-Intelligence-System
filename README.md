@@ -14,46 +14,59 @@ This project combines SQL → ETL → Feature Engineering → ML → Streamlit D
 
 ### Features
 
-**Dashboard Analytics**
--KPI Cards: CTR, CPC, ROI, Impressions, Clicks
--Filters: Platform, Region, Objective
--Charts:
-  -ROI Trend
-  -Impressions vs Clicks
-  -CTR vs ROI Scatter
+#### **Dashboard Analytics**
+- KPI Cards: **CTR, CPC, ROI, Impressions, Clicks**
+- Filters: **Platform, Region, Objective**
+- Charts:
+  - ROI Trend
+  - Impressions vs Clicks
+  - CTR vs ROI Scatter
 
-**Machine Learning**
--Tuned Random Forest Regression
--Feature-engineered dataset
--Predicts campaign-level ROI
--ML features downloadable inside UI
--Clean predictions table
+#### **Machine Learning**
+- Tuned **Random Forest Regression**
+- Feature-engineered dataset
+- Predicts **campaign-level ROI**
+- ML features downloadable inside UI
+- Clean predictions table
 
-**Data Engineering**
--CSV-based ETL (Cloud-friendly)
--SQL DB schema 
--Synthetic dataset generator for campaigns & metrics
--Extensible to real Google/Facebook API later
+#### **Data Engineering**
+- **CSV-based ETL** (Cloud-friendly)
+- **SQL DB schema**
+- Synthetic dataset generator for campaigns & metrics
+- Extensible to real **Google/Facebook Ads API** later
 
-**Deployment**
--Fully deployed on Streamlit Cloud
--Auto-detects missing DB and switches to CSV fallback
--Clean UI layout 
+## Architecture
 
-###Tech Stack
+flowchart TD
+    A[CSV / MySQL Data] --> B[ETL Layer <br> get_cached_data()]
+    B --> C[Feature Engineering <br> create_campaign_features()]
+    C --> D[ML Model <br> Random Forest Regression]
+    D --> E[Predictions CSV]
+    B --> F[Streamlit Dashboard]
+    E --> F
 
--Languages: Python, SQL, MySQL
--Libraries: Pandas, NumPy, Scikit-Learn, Streamlit, Altair, Joblib
--ML: Random Forest Regression (tuned), Feature Engineering
--Deployment: [Streamlit Cloud](https://share.streamlit.io/)
--Database Schema: [dbdiagram.io](https://dbdiagram.io/)
+#### **Deployment**
+- Fully deployed on **Streamlit Cloud**
+- Auto-detects missing DB and switches to CSV fallback
+- Clean, user-friendly UI layout
+
+---
+
+### Tech Stack
+
+- **Languages:** Python, SQL, MySQL  
+- **Libraries:** Pandas, NumPy, Scikit-Learn, Streamlit, Altair, Joblib  
+- **ML:** Random Forest Regression (tuned), Feature Engineering  
+- **Deployment:** [Streamlit Cloud](https://share.streamlit.io/)  
+- **Database Schema:** [dbdiagram.io](https://dbdiagram.io/)  
+
 
 ### Entity Relationship Diagram (ERD)
 
 Here’s the database structure of the AdWise360 project:
 
 <p align="center">
-  <img src="database/ERD_AdWise360.png" alt="AdWise360 ER Diagram" width="600"/>
+  <img src="database/AdWise360 ERD.png" alt="AdWise360 ER Diagram" width="600"/>
 </p>
 
 
