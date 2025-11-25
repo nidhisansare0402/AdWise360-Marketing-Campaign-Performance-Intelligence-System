@@ -129,7 +129,7 @@ with tab3:
     else:
         st.info('No data to show.')
 
-with tab_preds:
+with tab4:
     st.write("### Predicted Campaign ROI")
 
     preds_path = "database/predictions_output.csv"
