@@ -121,7 +121,7 @@ with tab2:
         st.altair_chart(scatter, use_container_width=True)
 
 with tab3:
-    st.write('### Dataset (sample)')
+    st.write('### Dataset')
     if not filtered.empty:
         display = filtered.copy()
         display['platform_name'] = display['platform_id'].map(platform_map)
