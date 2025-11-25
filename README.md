@@ -14,6 +14,7 @@ AdWise360 aims to automate this process by providing a **centralized, intelligen
 - [Entity Relationship Diagram](#entity-relationship-diagram)
 - [Machine Learning Pipeline](#machine-learning-pipeline)
 - [Deployment](#deployment)
+- [Live App URL](#live-app-url)
 - [Screenshots](#screenshots)
 - [How to Run Locally](#how-to-run-locally)
 - [Future Improvements](#future-improvements)
