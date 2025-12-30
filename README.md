@@ -22,7 +22,7 @@ AdWise360 aims to automate this process by providing a **centralized, intelligen
 
 ## Overview
 An end-to-end Marketing Analytics + Machine Learning dashboard built to analyze cross-platform ad campaigns (Google Ads, YouTube, Facebook) and predict future ROI using engineered features and a tuned Random Forest model.
-This project combines SQL → ETL → Feature Engineering → ML → Streamlit Dashboard → Deployment, designed to simulate real ad-agency work
+This project focuses on marketing analytics and ML-driven decision support, using lightweight ETL and SQL pipelines to enable KPI analysis, ROI prediction, and dashboard-driven insights.
 
 ## Features
 #### Dashboard Analytics
